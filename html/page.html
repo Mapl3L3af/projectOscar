@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <title>Project Oscar</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css">
+    <link rel="stylesheet" href="../main.css">
+    <link rel="icon" type="image/x-icon" href="../images/favicon.ico">
+  
+</head>
+<body>
+
+    <header class="header">
+        <!-- Left button -->
+        <a href="page2.html"><button class="button left-button">User View</button></a>
+        
+        <!-- Centered Logo -->
+        <div class="logo"><img style="height: 10vh;" src="../images/logo.png"> <h2 style="text-align: center; font-weight: 700;"> Lets Clean Those Streets!</h2></div>
+        
+        <!-- Right button -->
+        <a href="page.html"><button class="button right-button">Driver View</button></a>
+    </header>
+
+    <div style="height: 5vh; padding: 20px;"> <h2 style="font-weight: 50; text-align: center;"> <u>Todays Routing Options </u></h2></div>
+
+    <div id="maps-container"></div> <!-- Container to hold all maps -->
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+
+    <script>
+        fetch('../pythFile/parsed_routes.json')
+            .then(response => response.json())
+            .then(data => {
+                const mapsContainer = document.getElementById('maps-container');
+        
+                data.forEach((route, index) => {
+                    // Create a new div for each map and add it to the container
+                    const mapDiv = document.createElement('div');
+                    mapDiv.id = `map${index + 1}`;
+                    mapDiv.className = 'map-container';
+                    mapsContainer.appendChild(mapDiv);
+        
+                    // Initialize the map in the new container
+                    const map = L.map(mapDiv.id).setView([42.739, -73.685], 13);
+                    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                        attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                    }).addTo(map);
+        
+                    // Prepare waypoints for the routing and generate Google Maps link
+                    const waypoints = route.coordinates.map(coord => {
+                        L.marker([coord.lat, coord.lng]).addTo(map)
+                            .bindPopup(`Route ID: ${route.routeId}`);
+                        return L.latLng(coord.lat, coord.lng);
+                    });
+        
+                    // Create Google Maps link with route coordinates
+                    let googleMapsLink = "https://www.google.com/maps/dir/";
+                    route.coordinates.forEach(coord => {
+                        googleMapsLink += `${coord.lat},${coord.lng}/`;
+                    });
+        
+                    // Add the Google Maps link as a button or display it
+                    const googleMapsButton = document.createElement('a');
+                    googleMapsButton.href = googleMapsLink;
+                    googleMapsButton.target = "_blank";  // Open in a new tab
+                    googleMapsButton.className = 'google-maps-link'; // Add a class for styling if needed
+                    googleMapsButton.innerHTML = `View this route in Google Maps`;
+                    mapsContainer.appendChild(googleMapsButton);
+        
+                    // Use Leaflet Routing Machine to create a road-following route
+                    L.Routing.control({
+                        waypoints: waypoints,
+                        router: L.Routing.osrmv1({
+                            serviceUrl: 'https://router.project-osrm.org/route/v1'
+                        }),
+                        createMarker: () => null // Hide default markers from the routing library
+                    }).addTo(map);
+                });
+            })
+            .catch(error => console.error('Error loading JSON:', error));
+        </script>
+
+
+    <script>
+    // Fetch JSON data and create a map for each route dynamically
+    fetch('../pythFile/parsed_routes.json')
+        .then(response => response.json())
+        .then(data => {
+            const mapsContainer = document.getElementById('maps-container');
+
+            data.forEach((route, index) => {
+                // Create a new div for each map and add it to the container
+                const mapDiv = document.createElement('div');
+                mapDiv.id = `map${index + 1}`;
+                mapDiv.className = 'map-container';
+                mapsContainer.appendChild(mapDiv);
+
+                // Initialize the map in the new container
+                const map = L.map(mapDiv.id).setView([42.739, -73.685], 13);
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                }).addTo(map);
+
+                // Add a marker for each stop and prepare waypoints for the routing
+                const waypoints = route.coordinates.map(coord => {
+                    L.marker([coord.lat, coord.lng]).addTo(map)
+                        .bindPopup(`Route ID: ${route.routeId}`);
+                    return L.latLng(coord.lat, coord.lng);
+                });
+
+                // Use Leaflet Routing Machine to create a road-following route
+                L.Routing.control({
+                    waypoints: waypoints,
+                    router: L.Routing.osrmv1({
+                        serviceUrl: 'https://router.project-osrm.org/route/v1'
+                    }),
+                    createMarker: () => null // Hide default markers from the routing library
+                }).addTo(map);
+            });
+        })
+        .catch(error => console.error('Error loading JSON:', error));
+    </script>
+
+</body>
+</html>

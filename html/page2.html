@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>projectOscar</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+  <link rel="stylesheet" href="../main.css">
+  <link rel="icon" type="image/x-icon" href="../images/favicon.ico">
+  <style>
+    body, html {
+      height: 100%;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #addressInput {
+      text-align: center;
+      padding: 20px;
+      flex-grow: 1;
+    }
+
+    #map {
+      position: fixed;
+      bottom: 0;
+      height: 30%;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+    <header class="header">
+        <!-- Left button -->
+        <a href="page2.html"><button class="button left-button">User View</button> </a>
+        
+        <!-- Centered Logo -->
+       <div class="logo"><img style="height: 10vh;" src="../images/logo.png"> <h2 style="text-align: center; font-weight: 50;"> .projectOscar</h2></div>
+        
+        <!-- Right button -->
+        <a href="page.html"><button class="button right-button">Driver View</button></a>
+    </header>
+
+    <div style="height: 5vh; padding: 20px;"> <h2 style="font-weight: 400; text-align: center;"> <u>Need trash picked up, Let us know! </u></h2></div>
+
+    <p style="text-align: center; border-radius: 20px; background-color: white; padding-top: 3vh; padding-bottom: 3vh; margin: 50px;"> Wecome to projectOscar, we are from the bustling urban melting pot of NYC, so we know city. Unfortuntely with a lot of people, comes a LOT of trash. Project Oscar seeks to develop a better way of trash collection, a on demand trash service. We collect data on who needs trash collected and find a optimal path to swiftly and efficiently. Lets clean up sesame street together</p> 
+
+
+  <!-- Input field for an address -->
+  <div id="addressInput">
+    <input style="width:50vw; " type="text" id="address" placeholder="Enter an address">
+    <button onclick="generateFile()"> Submit</button>
+  </div>
+
+  <!-- Display the map fixed at the bottom -->
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <script>
+    let map = L.map('map').setView([0, 0], 2); // Default view
+
+    // Add OpenStreetMap tiles to the map
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    let userMarker, addressMarker;
+
+    // Get user's current location, place a marker, and suggest the address
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition((position) => {
+        const userLocation = [position.coords.latitude, position.coords.longitude];
+        map.setView(userLocation, 14);
+
+        // Place a marker at the user's location
+        userMarker = L.marker(userLocation).addTo(map)
+          .bindPopup("You are here!")
+          .openPopup();
+
+        // Reverse geocode the user's location
+        fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${userLocation[0]}&lon=${userLocation[1]}`)
+          .then(response => response.json())
+          .then(data => {
+            // Suggest the current address in the input field
+            document.getElementById("address").value = data.display_name || "Address not found";
+          })
+          .catch(error => console.error("Error fetching address:", error));
+      });
+    } else {
+      alert("Geolocation is not supported by this browser.");
+    }
+
+    // Function to generate a text file with the address input
+    function generateFile() {
+    const address = document.getElementById("address").value;
+    if (!address) {
+      alert("Please enter an address.");
+      return;
+    }
+
+    // Send the address to the server via a POST request
+    fetch('/save-address', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ address: address })
+    })
+    .then(response => response.text())
+    .then(data => {
+      alert(data); // Notify the user of the outcome
+    })
+    .catch(error => console.error("Error sending address:", error));
+  }
+  </script>
+
+  <p> This website was developed Pedro Correa, Thomas Doherty, Batrat75</p>
+
+</body>
+</html>
